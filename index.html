@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <title>Poring Race!</title>
+    <style>
+        .list-group-item {
+            background-color: transparent;
+            border-top: 1px solid #ddd;
+            border-radius: 0;
+            color: #fff;
+        }
+        .player {
+            font-weight: bold;
+            padding-top: 20px;
+            font-size: 40px;
+            line-height: 1;
+            padding-top: 80px;
+        }
+    </style>
+    <script>
+        var scroll = 0;
+        var players = [];
+        var modal;
+        var totalPlayerCount = 20;
+        var winner = -1;
+        var length_ = 0;
+        var timer = null;
+        $(function()
+        {
+            modal = new bootstrap.Modal(document.getElementById("myModal"), {
+                backdrop: 'static',
+                keyboard: false
+            });
+            modal.show();
+        });
+
+        function start()
+        {
+            var playerNames = $("#names").val().trim().split("\n");
+            totalPlayerCount = playerNames.length;
+            winner = -1;
+            players = [];
+            scroll = 0;
+
+            length_ = parseInt($("#length").val());
+            var game = $("#game");
+            var wallCount = parseInt(length_/2);
+            var openCount = length_ - wallCount;
+            game.empty();
+            game.append($(`<div class="bg" style="background-image: url('BG01_01_01.png'); width: 2048px; height: 1024px; position: absolute; top: 0px; left: 0px;"></div>`));
+            for(var i = 0; i < wallCount; i++)
+                game.append($(`<div class="bg" style="background-image: url('BG01_02_01.png'); width: 2048px; height: 1024px; position: absolute; top: 0px; left: 2048px;"></div>`));
+            game.append($(`<div class="bg" style="background-image: url('BG01_03_01.png'); width: 2048px; height: 1024px; position: absolute; top: 0px; left: 4096px;"></div>`));
+            for(var i = 0; i < openCount; i++)
+                game.append($(`<div class="bg" style="background-image: url('BG01_04_01.png'); width: 2048px; height: 1024px; position: absolute; top: 0px; left: 4096px;"></div>`));
+            game.append($(`<div class="bg" style="background-image: url('BG_finish.png'); width: 2048px; height: 1024px; position: absolute; top: 0px; left: 4096px;"></div>`));
+            game.append($(`<div class="bg" style="background-image: url('BG01_02_01.png'); width: 2048px; height: 1024px; position: absolute; top: 0px; left: 2048px;"></div>`));
+            game.append($(`<div id="props" style="position: absolute; top: 0px; left: 0px;"></div>`));
+            game.append($(`<div id="players"></div>`));
+
+            for(var i = 0; i < totalPlayerCount; i++)
+                addPlayer(playerNames[i]);
+
+            var props = $("#props");
+
+            var allSprites = [];
+            for(var i = 1; i < 101; i++)
+                allSprites.push(i);
+            
+            var count = 10*wallCount+6;
+            var step = (wallCount*2048 + 1000) / count;
+            for(var i = 0; i < count; i++)
+            {
+                if((i % allSprites.length) == 0)
+                    shuffle(allSprites);
+
+                var x = (1800 + i * step + 0.5*step*Math.random()-0.25*step);
+
+                var y = parseInt(50 + 125 * Math.random());
+                props.append($(`<img src="players/`+allSprites[i%allSprites.length]+`.png" style="z-index: `+y+`; height: 200px; width: auto; position: absolute; top: `+y+`px; left: `+x+`px;">`));
+            }
+
+
+
+
+            startRace();
+            modal.hide();
+        }
+
+        function addPlayer(name)
+        {
+            var playerDiv = $("#players");
+            var playerCount = playerDiv.children().length
+            players[playerCount] = {
+                position: 400,
+                frame: 0,
+                speed: 2,
+                stamina: 10,
+                name: name,
+                swtTimer: null,
+            }
+            var y = parseInt(250 + playerCount*(600 / totalPlayerCount));
+            var newPlayer = $("<div class=\"player\" style=\"z-index: "+y+"; width: 200px; height: 200px; background-image: url('art/"+parseInt(Math.random() * 101)+".png'); background-size: auto, 100px; position: absolute; top: "+ y + "px; left: "+400+"px;\"><img src=\"swt.gif\" style=\"margin-right: -50px; width: 50px; height: auto; position: relative; top: 0px; left: 50px; display: none;\">"+name+"</div>");
+            playerDiv.append(newPlayer);
+        }
+
+        function startRace()
+        {
+            setTimeout(function() { timer = setInterval(function()
+            {
+                var divs = $("#game").children(".bg");
+               
+                var oldScroll = scroll;
+                scroll = 0;
+                var frontPos = 0;
+                for(var i in players)
+                    frontPos = Math.max(frontPos, players[i].position);
+
+                for(var i in players)
+                {
+                    if(winner != -1)
+                    {
+                        if(winner == i)
+                        {
+                            players[i].position+=players[i].speed;
+                            players[i].speed = Math.max(0, players[i].speed-0.01);
+                            players[i].frame += players[i].speed * 0.1;
+                        }
+                    }
+                    else
+                    {
+                        var inc = Math.random()
+                        players[i].position += players[i].speed;
+                        if(players[i].speed > 2)
+                            players[i].stamina-=Math.pow(0.01*(players[i].speed-2),0.8);
+                        else
+                            players[i].stamina+=Math.pow((2-players[i].speed), 1.2);
+
+                        if(players[i].stamina < 20)
+                            players[i].stamina += (frontPos-players[i].position)*0.00005;
+
+                        if(players[i].stamina < 1)
+                        {
+                            players[i].speed *= 0.9;
+                            var el = $($(".player")[i]).find("img");
+                            var p = players[i];
+                            if(players[i].swtTimer == null)
+                            {
+                                el.css("display", "inline");
+                                players[i].swtTimer = setTimeout(function()
+                                {
+                                    el.css("display", "none");
+                                    p.swtTimer = null;
+                                }, 1000);
+                            }
+                        }
+                        if(players[i].speed < 0)
+                            players[i].speed = 0;
+                        if(players[i].stamina > 5 && Math.random() >0.95)
+                            players[i].speed += 0.1;
+                        players[i].frame += players[i].speed * 0.1;
+                        if(players[i].position > 5308 + 2048 * length_)
+                        {
+                            players[i].speed = 3;
+                            winner = i;
+                            setTimeout(function()
+                            {
+                                clearInterval(timer);
+                                modal.show();
+                                if($("#removewinner").is(":checked"))
+                                {
+                                    var playerNames = $("#names").val().trim().split("\n");
+                                    playerNames = playerNames.filter(function(item) { return item != players[winner].name; });
+                                    $("#names").val(playerNames.join("\n"));
+
+
+                                }
+
+                                $("#winner").text(players[winner].name + " won!");
+                            }, 5000)
+                        }
+                    }
+
+                    scroll = Math.max(scroll, players[i].position);
+                }
+                scroll = scroll - 400;
+
+                scroll = 0.01 * scroll + 0.99 * oldScroll;
+                
+                $(".player").each((index, el) =>
+                {
+                    $(el).css("left", (players[index].position - parseInt(scroll)) + "px");
+                    $(el).css("background-position", 200 * parseInt(players[index].frame) + "px 0px");
+                    //$(el).text(players[index].speed + "\n" + players[index].stamina);
+                });
+
+                divs.each((index, element) => {
+                    $(element).css("left", ((index*2048)-parseInt(scroll)) + "px");
+                });
+                $("#game").css("background-position", (-parseInt(scroll)*0.5) + "px 0px");
+                $("#props").css("left", (-parseInt(scroll)) + "px");
+            },1000/60); 
+        }, 1000);
+    }
+
+    function shuffle(array) {
+        let currentIndex = array.length,  randomIndex;
+
+        // While there remain elements to shuffle...
+        while (currentIndex != 0) {
+
+            // Pick a remaining element...
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            // And swap it with the current element.
+            [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex], array[currentIndex]];
+        }
+
+        return array;
+    }
+
+    </script>
+</head>
+ <body style="width: 100%; height: 100%; background-color: #343455;">
+    <div id="game" style="width: 100%; height: 1024px; position:absolute; overflow: hidden; background-image: url('BG01_03_03.png'); background-size: auto 300px;">
+        <div class="bg" style="background-image: url('BG01_01_01.png'); width: 2048px; height: 1024px; position: absolute; top: 0px; left: 0px;"></div>
+    </div>
+
+    <div id="myModal" class="modal" tabindex="-1" role="dialog" data-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Poring Raffle Race!</h5>
+                </div>
+                <div class="modal-body">
+                    <p id="winner"></p>
+                    <p>
+                        How long would you like to race? (number of screens, don't use too large values)<br/>
+                        <input class="form-input" id="length" value="0">
+                    </p>
+                    <p>
+                        Remove Winner?<br/>
+                        <input type="checkbox" class="form-input" id="removewinner" checked="checked">
+                    </p>
+                    <p>
+                        Player Names (1 per line):<br/>
+                        <textarea id="names" style="width: 100%; height: 300px">Borf
+Zao
+Minne</textarea>
+                    </p>
+                </div>
+                <div class="modal-footer"><input type="button" value="Start Race" onclick="start()" class="btn btn-primary"/></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
+</body>
+</html>
