@@ -32,6 +32,13 @@
         var winner = -1;
         var length_ = 0;
         var timer = null;
+        var sfx = [
+            new Audio('sfx/poi1.mp3'),
+            new Audio('sfx/poi2.mp3'),
+            new Audio('sfx/poi3.mp3'),
+            new Audio('sfx/LevelUp.mp3'),
+        ]
+
         $(function()
         {
             modal = new bootstrap.Modal(document.getElementById("myModal"), {
@@ -115,6 +122,9 @@
         {
             setTimeout(function() { timer = setInterval(function()
             {
+                sfx[0].play();
+                if(Math.random() < 0.01)
+                    sfx[2].play();
                 var divs = $("#game").children(".bg");
                
                 var oldScroll = scroll;
@@ -153,6 +163,7 @@
                             var p = players[i];
                             if(players[i].swtTimer == null)
                             {
+                                sfx[1].play();
                                 el.css("display", "inline");
                                 players[i].swtTimer = setTimeout(function()
                                 {
@@ -168,6 +179,7 @@
                         players[i].frame += players[i].speed * 0.1;
                         if(players[i].position > 5308 + 2048 * length_)
                         {
+                            sfx[3].play();
                             players[i].speed = 3;
                             winner = i;
                             setTimeout(function()
