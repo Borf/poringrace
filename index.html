@@ -240,6 +240,14 @@
         return array;
     }
 
+    function shufflePlayers()
+    {
+        var playerNames = $("#names").val().trim().split("\n");
+        playerNames = shuffle(playerNames);
+        $("#names").val(playerNames.join("\n"));
+    }
+
+
     </script>
 </head>
  <body style="width: 100%; height: 100%; background-color: #343455;">
@@ -265,12 +273,16 @@
                     </p>
                     <p>
                         Player Names (1 per line):<br/>
-                        <textarea id="names" style="width: 100%; height: 300px">Borf
-Zao
-Minne</textarea>
+                        <textarea id="names" style="width: 100%; height: 300px">Missy
+Autumnhime
+Borf
+Eulb
+Bacon
+Bunny
+Ayaya</textarea>
                     </p>
                 </div>
-                <div class="modal-footer"><input type="button" value="Start Race" onclick="start()" class="btn btn-primary"/></div>
+                <div class="modal-footer"><input type="button" value="Shuffle" onclick="shufflePlayers()" class="btn btn-warning"/><input type="button" value="Start Race" onclick="start()" class="btn btn-primary"/></div>
             </div>
         </div>
     </div>
